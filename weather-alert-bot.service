@@ -1,0 +1,20 @@
+[Unit]
+Description=Weather Alert Bot
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USERNAME
+WorkingDirectory=/path/to/weather-alert-bot
+Environment="PATH=/usr/bin:/usr/local/bin"
+ExecStart=/usr/bin/python3 main.py
+Restart=always
+RestartSec=60
+
+# Logging
+StandardOutput=append:/var/log/weather-alert-bot.log
+StandardError=append:/var/log/weather-alert-bot.error.log
+
+[Install]
+WantedBy=multi-user.target
+

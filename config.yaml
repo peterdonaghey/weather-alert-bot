@@ -1,0 +1,90 @@
+# Weather Alert Bot Configuration
+# Configure locations, alert thresholds, and notification settings
+
+# Locations to monitor
+# Each location must have a name and either a city or coordinates (lat/lon)
+locations:
+  - name: "Quinta do Amanhã"
+    city: "Coutada, Portugal"
+    # Alternative: use coordinates instead of city name
+    # lat: 38.7223
+    # lon: -9.1393
+
+  - name: "Home"
+    city: "London, UK"
+    # Optional: provide coordinates for more precise location
+    # lat: 51.5074
+    # lon: -0.1278
+
+# Alert configurations
+# Each alert type can be enabled/disabled and configured with thresholds
+alerts:
+  # Wind speed alerts
+  wind:
+    enabled: true
+    threshold_kmh: 50  # Alert if wind speed exceeds this
+    check_days_ahead: 1  # Check forecast for tomorrow
+  
+  # Storm alerts (combination of wind and precipitation)
+  storm:
+    enabled: true
+    wind_gust_threshold_kmh: 70  # Alert if wind gusts exceed this
+    precipitation_threshold_mm: 20  # Alert if precipitation exceeds this
+    check_days_ahead: 1
+  
+  # Temperature extreme alerts
+  temperature:
+    enabled: false
+    min_temp_c: 0  # Alert if temperature drops below this
+    max_temp_c: 35  # Alert if temperature exceeds this
+    check_days_ahead: 1
+  
+  # Heavy precipitation alerts
+  precipitation:
+    enabled: false
+    threshold_mm: 30  # Alert if precipitation exceeds this
+    check_days_ahead: 1
+  
+  # Weather condition alerts (rain, snow, thunderstorm, etc.)
+  weather_conditions:
+    enabled: false
+    alert_on:  # Alert on these weather conditions
+      - "Thunderstorm"
+      - "Snow"
+      - "Heavy rain"
+    check_days_ahead: 1
+
+# Telegram bot configuration
+telegram:
+  # Bot token from @BotFather (loaded from environment variable)
+  bot_token: "${TELEGRAM_BOT_TOKEN}"
+  
+  # List of chat IDs to send alerts to
+  # Get your chat ID by messaging @userinfobot on Telegram
+  chat_ids:
+    - "${TELEGRAM_CHAT_ID}"
+    # Add more chat IDs for multiple recipients:
+    # - "123456789"
+    # - "987654321"
+  
+  # Optional: Format settings for messages
+  message_format:
+    use_markdown: true
+    include_emoji: true
+
+# Schedule configuration (optional)
+# If not specified, use --check-now flag or set up external cron job
+schedule:
+  check_time: "08:00"  # Time to check daily (24-hour format)
+  timezone: "Europe/Lisbon"  # Timezone for check_time
+
+# API configuration (optional)
+# API keys can be set here or via environment variables (recommended)
+# api_keys:
+#   openweathermap: "your_api_key_here"
+
+# Logging configuration (optional)
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  file: "weather_alert.log"  # Log file path (optional)
+

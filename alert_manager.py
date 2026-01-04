@@ -132,6 +132,47 @@ class AlertManager:
         """
         self.alert_config = alert_config
     
+    def _get_daily_summary(self, forecast: Dict[str, Any], days_ahead: int = 1) -> Dict[str, Any]:
+        """
+        Get summary of forecast for a specific day ahead.
+        
+        Args:
+            forecast: Forecast data from WeatherMonitor
+            days_ahead: Number of days ahead (0=today, 1=tomorrow, etc.)
+            
+        Returns:
+            Daily summary with max/min values
+        """
+        from datetime import datetime, timedelta
+        
+        target_date = datetime.now().date() + timedelta(days=days_ahead)
+        
+        # filter forecasts for target day
+        day_forecasts = [
+            f for f in forecast['forecasts']
+            if f['time'].date() == target_date
+        ]
+        
+        if not day_forecasts:
+            return None
+        
+        # calculate summary statistics
+        summary = {
+            'date': target_date,
+            'location_name': forecast['location_name'],
+            'temp_min': min(f['temp_min'] for f in day_forecasts),
+            'temp_max': max(f['temp_max'] for f in day_forecasts),
+            'temp_avg': sum(f['temperature'] for f in day_forecasts) / len(day_forecasts),
+            'wind_speed_max': max(f['wind_speed_kmh'] for f in day_forecasts),
+            'wind_gust_max': max(f['wind_gust'] for f in day_forecasts),
+            'precipitation_total': sum(f['precipitation'] for f in day_forecasts),
+            'precipitation_probability_max': max(f['precipitation_probability'] for f in day_forecasts),
+            'weather_conditions': list(set(f['weather'] for f in day_forecasts)),
+            'hourly_forecasts': day_forecasts
+        }
+        
+        return summary
+    
     def check_alerts(
         self,
         forecast_data: Dict[str, Any],
@@ -150,9 +191,9 @@ class AlertManager:
         alerts = []
         
         # get daily summary for the target day
+        # import the function directly to avoid needing an API key
         from weather_monitor import WeatherMonitor
-        monitor = WeatherMonitor(api_key="")  # dummy instance for method access
-        daily_summary = monitor.get_daily_summary(forecast_data, days_ahead)
+        daily_summary = self._get_daily_summary(forecast_data, days_ahead)
         
         if not daily_summary:
             logger.warning(

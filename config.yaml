@@ -11,7 +11,7 @@ locations:
     # lon: -9.1393
 
   - name: "Home"
-    city: "London, UK"
+    city: "London"
     # Optional: provide coordinates for more precise location
     # lat: 51.5074
     # lon: -0.1278

@@ -139,10 +139,23 @@ async def check_weather_and_send_alerts(
             )
         
         # initialize telegram notifier
+        from subscribers import get_all_chat_ids
+        
         telegram_config = config_loader.get_telegram_config()
+        config_chat_ids = telegram_config.get('chat_ids', [])
+        
+        # combine config chat IDs with subscribers
+        all_chat_ids = get_all_chat_ids(config_chat_ids)
+        
+        if not all_chat_ids:
+            logger.warning("no chat ids configured and no subscribers")
+            return 0
+        
+        logger.info(f"sending to {len(all_chat_ids)} recipient(s)")
+        
         notifier = TelegramNotifier(
             bot_token=telegram_config['bot_token'],
-            chat_ids=telegram_config['chat_ids']
+            chat_ids=all_chat_ids
         )
         
         use_emoji = telegram_config.get('message_format', {}).get('include_emoji', True)

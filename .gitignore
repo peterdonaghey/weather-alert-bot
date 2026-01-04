@@ -1,6 +1,9 @@
 # environment variables
 .env
 
+# subscriber data (optional - commit if you want to share subscribers)
+# subscribers.json
+
 # python
 __pycache__/
 *.py[cod]

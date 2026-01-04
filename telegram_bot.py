@@ -189,6 +189,8 @@ class TelegramBotApp:
         # add command handlers
         self.application.add_handler(CommandHandler("start", self.start_command))
         self.application.add_handler(CommandHandler("help", self.help_command))
+        self.application.add_handler(CommandHandler("subscribe", self.subscribe_command))
+        self.application.add_handler(CommandHandler("unsubscribe", self.unsubscribe_command))
         self.application.add_handler(CommandHandler("check", self.check_command))
         self.application.add_handler(CommandHandler("status", self.status_command))
         
@@ -196,23 +198,76 @@ class TelegramBotApp:
     
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /start command."""
-        chat_id = update.effective_chat.id
+        from subscribers import is_subscribed
+        
+        chat_id = str(update.effective_chat.id)
+        subscribed = is_subscribed(chat_id)
         
         message = (
             "🌤️ *weather alert bot*\n\n"
-            "i monitor weather conditions and send alerts when configured thresholds are exceeded.\n\n"
+            "i monitor weather conditions and send daily weather summaries and alerts.\n\n"
             "*available commands:*\n"
-            "  /check - manually check weather and send alerts\n"
+            "  /subscribe - receive daily weather updates\n"
+            "  /unsubscribe - stop receiving updates\n"
+            "  /check - manually check weather now\n"
             "  /status - show current configuration\n"
             "  /help - show this help message\n\n"
-            f"your chat id: `{chat_id}`"
         )
+        
+        if subscribed:
+            message += "✅ you are subscribed to weather alerts"
+        else:
+            message += "send /subscribe to receive daily weather updates"
         
         await update.message.reply_text(message, parse_mode='Markdown')
     
     async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /help command."""
         await self.start_command(update, context)
+    
+    async def subscribe_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /subscribe command."""
+        from subscribers import add_subscriber, get_subscribers
+        
+        chat_id = str(update.effective_chat.id)
+        
+        if add_subscriber(chat_id):
+            message = (
+                "✅ *subscribed!*\n\n"
+                "you will now receive daily weather updates.\n\n"
+                "use /unsubscribe to stop receiving updates."
+            )
+            await update.message.reply_text(message, parse_mode='Markdown')
+            
+            # log subscription
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"new subscriber: {chat_id} (total: {len(get_subscribers())})")
+        else:
+            message = "ℹ️ you are already subscribed!"
+            await update.message.reply_text(message)
+    
+    async def unsubscribe_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /unsubscribe command."""
+        from subscribers import remove_subscriber
+        
+        chat_id = str(update.effective_chat.id)
+        
+        if remove_subscriber(chat_id):
+            message = (
+                "👋 *unsubscribed*\n\n"
+                "you will no longer receive weather updates.\n\n"
+                "send /subscribe anytime to resubscribe."
+            )
+            await update.message.reply_text(message, parse_mode='Markdown')
+            
+            # log unsubscription
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"unsubscribed: {chat_id}")
+        else:
+            message = "ℹ️ you are not currently subscribed."
+            await update.message.reply_text(message)
     
     async def check_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /check command to manually trigger weather check."""

@@ -57,7 +57,7 @@ def _create_weather_summary(forecasts, weather_monitor, use_emoji=True):
             if daily:
                 day_name = (datetime.now() + timedelta(days=days)).strftime('%A')
                 lines.append(f"*{day_name}:*")
-                lines.append(f"  🌡️  {daily['temp_min']:.0f}°C - {daily['temp_max']:.0f}°C")
+                lines.append(f"  🌡️  Low {daily['temp_min']:.0f}°C / High {daily['temp_max']:.0f}°C")
                 lines.append(f"  💨 {daily['wind_speed_max']:.0f} km/h" + 
                            (f" (gusts {daily['wind_gust_max']:.0f})" if daily['wind_gust_max'] > daily['wind_speed_max'] else ""))
                 

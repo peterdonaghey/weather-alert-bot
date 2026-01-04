@@ -439,18 +439,9 @@ class AlertManager:
             location_name = forecast_data['location_name']
             logger.info(f"checking alerts for {location_name}")
             
-            # check each configured alert type for days ahead
-            for alert_type, alert_config in self.alert_config.items():
-                if not isinstance(alert_config, dict):
-                    continue
-                
-                if not alert_config.get('enabled', False):
-                    continue
-                
-                days_ahead = alert_config.get('check_days_ahead', 1)
-                
-                alerts = self.check_alerts(forecast_data, days_ahead)
-                all_alerts.extend(alerts)
+            # check alerts for this location (check_alerts handles all alert types)
+            alerts = self.check_alerts(forecast_data, days_ahead=1)
+            all_alerts.extend(alerts)
         
         logger.info(f"generated {len(all_alerts)} alert(s)")
         return all_alerts

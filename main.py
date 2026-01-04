@@ -20,12 +20,14 @@ from telegram_bot import TelegramNotifier, TelegramBotApp
 
 def _create_weather_summary(forecasts, weather_monitor, use_emoji=True):
     """Create a summary message of weather forecasts."""
+    from datetime import datetime, timedelta
+    
     lines = []
     
     if use_emoji:
-        lines.append("🌤️ *Daily Weather Summary*")
+        lines.append("🌤️ *Weather Forecast*")
     else:
-        lines.append("*Daily Weather Summary*")
+        lines.append("*Weather Forecast*")
     
     lines.append("")
     lines.append(f"📅 *{datetime.now().strftime('%A, %B %d, %Y')}*")
@@ -34,29 +36,34 @@ def _create_weather_summary(forecasts, weather_monitor, use_emoji=True):
     for forecast in forecasts:
         location_name = forecast['location_name']
         
-        # get tomorrow's forecast
-        daily = weather_monitor.get_daily_summary(forecast, days_ahead=1)
+        if use_emoji:
+            lines.append(f"📍 *{location_name}*")
+        else:
+            lines.append(f"*{location_name}*")
         
-        if daily:
-            if use_emoji:
-                lines.append(f"📍 *{location_name}*")
-            else:
-                lines.append(f"*{location_name}*")
+        lines.append("")
+        
+        # show next 3 days
+        for days in range(1, 4):
+            daily = weather_monitor.get_daily_summary(forecast, days_ahead=days)
             
-            lines.append(f"  🌡️  Temp: {daily['temp_min']:.0f}°C - {daily['temp_max']:.0f}°C")
-            lines.append(f"  💨 Wind: {daily['wind_speed_max']:.0f} km/h")
-            
-            if daily['wind_gust_max'] > 0:
-                lines.append(f"  💨 Gusts: {daily['wind_gust_max']:.0f} km/h")
-            
-            if daily['precipitation_total'] > 0:
-                lines.append(f"  🌧️  Rain: {daily['precipitation_total']:.1f} mm")
-            
-            conditions = ', '.join(daily['weather_conditions'])
-            lines.append(f"  ☁️  {conditions}")
-            lines.append("")
+            if daily:
+                day_name = (datetime.now() + timedelta(days=days)).strftime('%A')
+                lines.append(f"*{day_name}:*")
+                lines.append(f"  🌡️  {daily['temp_min']:.0f}°C - {daily['temp_max']:.0f}°C")
+                lines.append(f"  💨 {daily['wind_speed_max']:.0f} km/h" + 
+                           (f" (gusts {daily['wind_gust_max']:.0f})" if daily['wind_gust_max'] > daily['wind_speed_max'] else ""))
+                
+                if daily['precipitation_total'] > 0:
+                    lines.append(f"  🌧️  {daily['precipitation_total']:.1f} mm")
+                
+                conditions = ', '.join(daily['weather_conditions'])
+                lines.append(f"  {conditions}")
+                lines.append("")
+        
+        lines.append("")
     
-    lines.append("✅ _No weather alerts at this time_")
+    lines.append("✅ _No weather alerts_")
     
     return "\n".join(lines)
 

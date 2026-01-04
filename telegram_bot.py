@@ -298,12 +298,15 @@ class TelegramBotApp:
                     await update.message.reply_text(message, parse_mode='Markdown')
                     await asyncio.sleep(0.5)
             else:
-                await update.message.reply_text(
-                    "✅ no weather alerts at this time. all conditions within normal ranges."
-                )
+                # send weather summary even if no alerts
+                from main import _create_weather_summary
+                summary = _create_weather_summary(forecasts, self.weather_monitor, use_emoji=True)
+                await update.message.reply_text(summary, parse_mode='Markdown')
         
         except Exception as e:
-            logger.error(f"error in check command: {e}")
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"error in check command: {e}", exc_info=True)
             await update.message.reply_text(
                 f"❌ error checking weather: {str(e)}"
             )

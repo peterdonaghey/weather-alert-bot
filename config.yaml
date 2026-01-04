@@ -16,7 +16,7 @@ alerts:
   # Wind speed alerts
   wind:
     enabled: true
-    threshold_kmh: 50  # Alert if wind speed exceeds this
+    threshold_kmh: 10  # Alert if wind speed exceeds this
     check_days_ahead: 1  # Check forecast for tomorrow
   
   # Storm alerts (combination of wind and precipitation)

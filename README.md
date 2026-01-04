@@ -44,8 +44,10 @@ alerts:
 ### 3. test locally
 
 ```bash
-python main.py --verbose
+python main.py
 ```
+
+add `--verbose` for detailed logging if needed
 
 ### 4. deploy to github actions
 

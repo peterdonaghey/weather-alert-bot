@@ -15,7 +15,7 @@ from datetime import datetime
 from config_loader import ConfigLoader, ConfigurationError
 from weather_monitor import WeatherMonitor, WeatherAPIError
 from alert_manager import AlertManager
-from telegram_bot import TelegramNotifier, TelegramBotApp
+from telegram_bot import TelegramNotifier
 
 
 def _create_weather_summary(forecasts, weather_monitor, use_emoji=True):
@@ -221,128 +221,16 @@ async def check_weather_and_send_alerts(
         return -1
 
 
-async def run_bot_interactive(config_loader: ConfigLoader):
-    """
-    Run bot in interactive mode with commands.
-    
-    Args:
-        config_loader: Configuration loader instance
-    """
-    logger = logging.getLogger(__name__)
-    
-    try:
-        # load configuration
-        config = config_loader.load()
-        telegram_config = config_loader.get_telegram_config()
-        
-        # initialize components
-        api_key = config_loader.get_api_key('openweathermap')
-        weather_monitor = WeatherMonitor(api_key)
-        alert_manager = AlertManager(config_loader.get_alerts())
-        
-        # create bot app
-        bot_app = TelegramBotApp(
-            bot_token=telegram_config['bot_token'],
-            weather_monitor=weather_monitor,
-            alert_manager=alert_manager,
-            config_loader=config_loader
-        )
-        
-        logger.info("starting telegram bot in interactive mode...")
-        logger.info("press ctrl+c to stop")
-        
-        await bot_app.run()
-        
-    except KeyboardInterrupt:
-        logger.info("stopping bot...")
-    except Exception as e:
-        logger.error(f"error running bot: {e}", exc_info=True)
-        sys.exit(1)
-
-
-async def run_scheduled(config_loader: ConfigLoader):
-    """
-    Run scheduled checks based on configuration.
-    
-    Args:
-        config_loader: Configuration loader instance
-    """
-    import schedule
-    import time
-    
-    logger = logging.getLogger(__name__)
-    
-    try:
-        config = config_loader.load()
-        schedule_config = config_loader.get_schedule_config()
-        
-        if not schedule_config:
-            logger.error("no schedule configuration found")
-            sys.exit(1)
-        
-        check_time = schedule_config.get('check_time', '08:00')
-        timezone = schedule_config.get('timezone', 'UTC')
-        
-        logger.info(f"scheduling daily check at {check_time} ({timezone})")
-        
-        # schedule the check
-        def scheduled_check():
-            logger.info("running scheduled weather check...")
-            asyncio.run(check_weather_and_send_alerts(config_loader))
-        
-        schedule.every().day.at(check_time).do(scheduled_check)
-        
-        logger.info("scheduler started. press ctrl+c to stop")
-        
-        # run scheduler
-        while True:
-            schedule.run_pending()
-            time.sleep(60)  # check every minute
-            
-    except KeyboardInterrupt:
-        logger.info("stopping scheduler...")
-    except Exception as e:
-        logger.error(f"error in scheduler: {e}", exc_info=True)
-        sys.exit(1)
-
-
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="weather alert bot - monitor weather and send telegram alerts",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-examples:
-  # run one-time check
-  python main.py --check-now
-  
-  # run with scheduling
-  python main.py
-  
-  # run interactive bot
-  python main.py --interactive
-  
-  # run with verbose logging
-  python main.py --check-now --verbose
-"""
+        description="weather alert bot - monitor weather and send telegram alerts"
     )
     
     parser.add_argument(
         '--config',
         default='config.yaml',
         help='path to configuration file (default: config.yaml)'
-    )
-    
-    parser.add_argument(
-        '--check-now',
-        action='store_true',
-        help='run weather check immediately and exit'
-    )
-    
-    parser.add_argument(
-        '--interactive',
-        action='store_true',
-        help='run bot in interactive mode with commands'
     )
     
     parser.add_argument(
@@ -358,16 +246,11 @@ examples:
         help='set logging level'
     )
     
-    parser.add_argument(
-        '--log-file',
-        help='log file path (optional)'
-    )
-    
     args = parser.parse_args()
     
     # setup logging
     log_level = 'DEBUG' if args.verbose else args.log_level
-    setup_logging(log_level, args.log_file)
+    setup_logging(log_level, None)
     
     logger = logging.getLogger(__name__)
     logger.info("weather alert bot starting...")
@@ -380,38 +263,20 @@ examples:
         logger.error(f"failed to initialize config loader: {e}")
         sys.exit(1)
     
-    # run in appropriate mode
-    try:
-        if args.check_now:
-            # one-time check
-            alert_count = asyncio.run(
-                check_weather_and_send_alerts(config_loader, verbose=args.verbose)
-            )
-            
-            if alert_count < 0:
-                logger.error("check failed")
-                sys.exit(1)
-            elif alert_count == 0:
-                logger.info("check completed - no alerts")
-            else:
-                logger.info(f"check completed - {alert_count} alert(s) sent")
-            
-            sys.exit(0)
-            
-        elif args.interactive:
-            # interactive bot mode
-            asyncio.run(run_bot_interactive(config_loader))
-            
-        else:
-            # scheduled mode
-            asyncio.run(run_scheduled(config_loader))
-            
-    except KeyboardInterrupt:
-        logger.info("shutting down...")
-        sys.exit(0)
-    except Exception as e:
-        logger.error(f"fatal error: {e}", exc_info=True)
+    # run check
+    alert_count = asyncio.run(
+        check_weather_and_send_alerts(config_loader, verbose=args.verbose)
+    )
+    
+    if alert_count < 0:
+        logger.error("check failed")
         sys.exit(1)
+    elif alert_count == 0:
+        logger.info("check completed - no alerts")
+    else:
+        logger.info(f"check completed - {alert_count} alert(s) sent")
+    
+    sys.exit(0)
 
 
 if __name__ == "__main__":

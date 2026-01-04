@@ -106,6 +106,17 @@ async def check_weather_and_send_alerts(
         logger.info("loading configuration...")
         config = config_loader.load()
         
+        # first, process any pending telegram messages and auto-subscribe
+        telegram_config = config_loader.get_telegram_config()
+        bot_token = telegram_config['bot_token']
+        
+        logger.info("checking for new subscribers...")
+        from auto_subscribe import process_pending_messages
+        new_subs = await process_pending_messages(bot_token)
+        
+        if new_subs > 0:
+            logger.info(f"auto-subscribed {new_subs} new user(s)")
+        
         # get API key
         api_key = config_loader.get_api_key('openweathermap')
         

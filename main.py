@@ -18,6 +18,49 @@ from alert_manager import AlertManager
 from telegram_bot import TelegramNotifier, TelegramBotApp
 
 
+def _create_weather_summary(forecasts, weather_monitor, use_emoji=True):
+    """Create a summary message of weather forecasts."""
+    lines = []
+    
+    if use_emoji:
+        lines.append("🌤️ *Daily Weather Summary*")
+    else:
+        lines.append("*Daily Weather Summary*")
+    
+    lines.append("")
+    lines.append(f"📅 *{datetime.now().strftime('%A, %B %d, %Y')}*")
+    lines.append("")
+    
+    for forecast in forecasts:
+        location_name = forecast['location_name']
+        
+        # get tomorrow's forecast
+        daily = weather_monitor.get_daily_summary(forecast, days_ahead=1)
+        
+        if daily:
+            if use_emoji:
+                lines.append(f"📍 *{location_name}*")
+            else:
+                lines.append(f"*{location_name}*")
+            
+            lines.append(f"  🌡️  Temp: {daily['temp_min']:.0f}°C - {daily['temp_max']:.0f}°C")
+            lines.append(f"  💨 Wind: {daily['wind_speed_max']:.0f} km/h")
+            
+            if daily['wind_gust_max'] > 0:
+                lines.append(f"  💨 Gusts: {daily['wind_gust_max']:.0f} km/h")
+            
+            if daily['precipitation_total'] > 0:
+                lines.append(f"  🌧️  Rain: {daily['precipitation_total']:.1f} mm")
+            
+            conditions = ', '.join(daily['weather_conditions'])
+            lines.append(f"  ☁️  {conditions}")
+            lines.append("")
+    
+    lines.append("✅ _No weather alerts at this time_")
+    
+    return "\n".join(lines)
+
+
 # configure logging
 def setup_logging(log_level: str = "INFO", log_file: Optional[str] = None):
     """Setup logging configuration."""
@@ -89,33 +132,36 @@ async def check_weather_and_send_alerts(
         if verbose:
             logger.info(f"generated {len(alerts)} alert(s)")
         
-        if not alerts:
-            logger.info("no alerts triggered - all conditions within normal ranges")
-            return 0
-        
         # log alerts
         for alert in alerts:
             logger.info(
                 f"alert: {alert.alert_type} - {alert.location_name} - {alert.severity} - {alert.message}"
             )
         
-        # send alerts via telegram
+        # initialize telegram notifier
         telegram_config = config_loader.get_telegram_config()
         notifier = TelegramNotifier(
             bot_token=telegram_config['bot_token'],
             chat_ids=telegram_config['chat_ids']
         )
         
-        logger.info(f"sending {len(alerts)} alert(s) via telegram...")
-        
         use_emoji = telegram_config.get('message_format', {}).get('include_emoji', True)
-        results = await notifier.send_alerts(alerts, use_emoji=use_emoji)
+        
+        # send alerts if any
+        if alerts:
+            logger.info(f"sending {len(alerts)} alert(s) via telegram...")
+            results = await notifier.send_alerts(alerts, use_emoji=use_emoji)
+        else:
+            logger.info("no alerts triggered - sending weather summary...")
+            # create weather summary message
+            summary_message = _create_weather_summary(forecasts, weather_monitor, use_emoji)
+            results = await notifier.send_message(summary_message, parse_mode='Markdown')
         
         # log results
         success_count = len(results['success'])
         failed_count = len(results['failed'])
         
-        logger.info(f"alerts sent successfully to {success_count} chat(s)")
+        logger.info(f"messages sent successfully to {success_count} chat(s)")
         
         if failed_count > 0:
             logger.warning(f"failed to send to {failed_count} chat(s)")

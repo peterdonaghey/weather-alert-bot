@@ -37,14 +37,17 @@ def _create_weather_summary(forecasts, weather_monitor, use_emoji=True):
         location_name = forecast['location_name']
         actual_city = forecast['city']
         actual_country = forecast['country']
+        lat = forecast['coordinates']['lat']
+        lon = forecast['coordinates']['lon']
         
         if use_emoji:
             lines.append(f"📍 *{location_name}*")
         else:
             lines.append(f"*{location_name}*")
         
-        # show actual location from API
+        # show actual location from API with coordinates
         lines.append(f"_{actual_city}, {actual_country}_")
+        lines.append(f"_Coords: {lat:.4f}, {lon:.4f}_")
         lines.append("")
         
         # show next 3 days

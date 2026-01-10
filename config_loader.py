@@ -210,6 +210,12 @@ class ConfigLoader:
             raise ConfigurationError("configuration not loaded")
         return self.config.get('schedule')
     
+    def get_claude_config(self) -> Optional[Dict[str, Any]]:
+        """Get Claude AI configuration if present."""
+        if self.config is None:
+            raise ConfigurationError("configuration not loaded")
+        return self.config.get('claude')
+    
     def get_api_key(self, service: str) -> str:
         """
         Get API key for a service.

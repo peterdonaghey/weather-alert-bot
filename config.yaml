@@ -17,27 +17,27 @@ alerts:
   wind:
     enabled: true
     threshold_kmh: 50  # Alert if wind speed exceeds this
-    check_days_ahead: 1  # Check forecast for tomorrow
+    check_days_ahead: 3  # Check forecast for tomorrow
   
   # Storm alerts (combination of wind and precipitation)
   storm:
     enabled: true
     wind_gust_threshold_kmh: 70  # Alert if wind gusts exceed this
     precipitation_threshold_mm: 20  # Alert if precipitation exceeds this
-    check_days_ahead: 1
+    check_days_ahead: 3
   
   # Temperature extreme alerts
   temperature:
-    enabled: false
+    enabled: true
     min_temp_c: 0  # Alert if temperature drops below this
     max_temp_c: 35  # Alert if temperature exceeds this
-    check_days_ahead: 1
+    check_days_ahead: 3
   
   # Heavy precipitation alerts
   precipitation:
-    enabled: false
+    enabled: true
     threshold_mm: 30  # Alert if precipitation exceeds this
-    check_days_ahead: 1
+    check_days_ahead: 3
   
   # Weather condition alerts (rain, snow, thunderstorm, etc.)
   weather_conditions:
@@ -46,7 +46,7 @@ alerts:
       - "Thunderstorm"
       - "Snow"
       - "Heavy rain"
-    check_days_ahead: 1
+    check_days_ahead: 3
 
 # Telegram bot configuration
 telegram:

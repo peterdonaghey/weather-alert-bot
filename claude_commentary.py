@@ -51,3 +51,4 @@ def generate_weather_comment(weather_data: str, prompt_template: str) -> Optiona
         return None
 
 
+

@@ -50,3 +50,4 @@ def generate_weather_comment(weather_data: str, prompt_template: str) -> Optiona
         logger.error(f"failed to generate weather comment: {e}")
         return None
 
+

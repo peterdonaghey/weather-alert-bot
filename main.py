@@ -371,18 +371,28 @@ async def check_weather_and_send_alerts(
             )
 
         # initialize telegram notifier
-        from subscribers import get_all_chat_ids
+        from subscribers import get_all_chat_ids, get_subscribers, is_subscribed
 
         telegram_config = config_loader.get_telegram_config()
         config_chat_ids = telegram_config.get("chat_ids", [])
 
-        # if dev mode, only send to specified chat id
+        # if dev mode, only send to specified chat id IF they're subscribed
         if dev_chat_id:
-            all_chat_ids = [dev_chat_id]
-            logger.info(f"dev mode: sending only to {dev_chat_id}")
+            # check if dev_chat_id is subscribed (respect unsubscribe)
+            if is_subscribed(dev_chat_id):
+                all_chat_ids = [dev_chat_id]
+                logger.info(f"dev mode: sending only to {dev_chat_id} (subscribed)")
+            else:
+                logger.info(f"dev mode: {dev_chat_id} is not subscribed, skipping weather report")
+                all_chat_ids = []
         else:
             # combine config chat IDs with subscribers
+            # note: subscribers.json was just updated by process_pending_messages()
             all_chat_ids = get_all_chat_ids(config_chat_ids)
+            subscribers_list = get_subscribers()
+            logger.info(f"current subscribers: {subscribers_list}")
+            logger.info(f"config chat_ids: {config_chat_ids}")
+            logger.info(f"final recipient list: {all_chat_ids}")
 
         if not all_chat_ids:
             logger.warning("no chat ids configured and no subscribers")

@@ -29,6 +29,8 @@ def _save_subscribers(subscribers: Set[str]):
     """Save subscribers to file."""
     with open(SUBSCRIBERS_FILE, 'w') as f:
         json.dump({'subscribers': sorted(list(subscribers))}, f, indent=2)
+        f.flush()
+        os.fsync(f.fileno())  # force write to disk
 
 
 def add_subscriber(chat_id: str) -> bool:

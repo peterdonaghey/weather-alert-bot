@@ -77,7 +77,7 @@ class HourlyForecastFormatter:
     @staticmethod
     def format_hourly_line(forecast_entry: Dict[str, Any]) -> str:
         """
-        Format a single hourly forecast as a compact line.
+        Format a single hourly forecast as a compact, mobile-friendly line.
 
         Args:
             forecast_entry: Single forecast entry
@@ -96,8 +96,22 @@ class HourlyForecastFormatter:
         emoji = HourlyForecastFormatter._get_condition_emoji(condition)
         rain_visual = HourlyForecastFormatter._get_rainfall_visual(precip)
 
-        # Format: HH:MM | Temp(feels) | Wind | Condition | Rain | Humidity
-        return f"{time_str} │ {temp:5.1f}°({feels_like:4.1f}°) │ {wind:4.1f}km/h │ {emoji} {condition:8s} │ {rain_visual} {precip:4.1f}mm │ {humidity:2.0f}%"
+        # Mobile-friendly format: compact with emojis, no fixed-width columns
+        # Format: HH:MM 🌡️ Temp(Feels) 💨 Wind 🌧️ Rain 💧 Humid Condition
+        parts = [
+            f"<b>{time_str}</b>",
+            f"🌡️ {temp:.0f}°({feels_like:.0f}°)",
+            f"💨 {wind:.0f}km/h",
+        ]
+        
+        # Only show rain if > 0
+        if precip > 0:
+            parts.append(f"{rain_visual} {precip:.1f}mm")
+        
+        parts.append(f"💧 {humidity:.0f}%")
+        parts.append(f"{emoji} {condition}")
+        
+        return " • ".join(parts)
 
     @staticmethod
     def format_hourly_forecast(forecast: Dict[str, Any]) -> str:
@@ -137,15 +151,8 @@ class HourlyForecastFormatter:
                 current_date = forecast_date
                 day_name = h["time"].strftime("%A, %b %d")
                 lines.append(f"<b>📅 {day_name}</b>")
-                lines.append(
-                    "<code>Time │ Temp (feels) │ Wind   │ Condition │ Rain      │ Humid</code>"
-                )
-                lines.append(
-                    "<code>─────┼──────────────┼────────┼───────────┼───────────┼──────</code>"
-                )
 
-            lines.append(
-                "<code>" + HourlyForecastFormatter.format_hourly_line(h) + "</code>"
-            )
+            # Mobile-friendly format - no code blocks, wraps naturally
+            lines.append(HourlyForecastFormatter.format_hourly_line(h))
 
         return "\n".join(lines)

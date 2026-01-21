@@ -77,13 +77,14 @@ class HourlyForecastFormatter:
     @staticmethod
     def format_hourly_line(forecast_entry: Dict[str, Any]) -> str:
         """
-        Format a single hourly forecast as a compact, mobile-friendly line.
+        Format a single hourly forecast with smart wrapping for mobile.
+        Uses logical line breaks for better readability on narrow viewports.
 
         Args:
             forecast_entry: Single forecast entry
 
         Returns:
-            Formatted string for display
+            Formatted multi-line string for display
         """
         time_str = forecast_entry["time"].strftime("%H:%M")
         temp = forecast_entry["temperature"]
@@ -94,24 +95,22 @@ class HourlyForecastFormatter:
         humidity = forecast_entry["humidity"]
 
         emoji = HourlyForecastFormatter._get_condition_emoji(condition)
-        rain_visual = HourlyForecastFormatter._get_rainfall_visual(precip)
 
-        # Mobile-friendly format: compact with emojis, no fixed-width columns
-        # Format: HH:MM 🌡️ Temp(Feels) 💨 Wind 🌧️ Rain 💧 Humid Condition
-        parts = [
-            f"<b>{time_str}</b>",
-            f"🌡️ {temp:.0f}°({feels_like:.0f}°)",
-            f"💨 {wind:.0f}km/h",
-        ]
+        # Smart wrap format: logical breaks for mobile
+        # Line 1: Time, emoji, condition
+        line1 = f"<b>{time_str}</b> {emoji} {condition}"
         
-        # Only show rain if > 0
+        # Line 2: Temperature with icon
+        line2 = f"  🌡️ {temp:.0f}° (feels {feels_like:.0f}°)"
+        
+        # Line 3: Wind, rain (if any), humidity
+        line3_parts = [f"💨 {wind:.0f}km/h"]
         if precip > 0:
-            parts.append(f"{rain_visual} {precip:.1f}mm")
+            line3_parts.append(f"💧 {precip:.1f}mm")
+        line3_parts.append(f"💧 {humidity:.0f}%")
+        line3 = " • ".join(line3_parts)
         
-        parts.append(f"💧 {humidity:.0f}%")
-        parts.append(f"{emoji} {condition}")
-        
-        return " • ".join(parts)
+        return f"{line1}\n{line2}\n  {line3}"
 
     @staticmethod
     def format_hourly_forecast(forecast: Dict[str, Any]) -> str:
